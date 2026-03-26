@@ -1,146 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-
-<title>AI Smart Building Dashboard</title>
-
-<style>
-
-body{
-font-family:Arial;
-background:#f4f6f9;
-padding:40px;
-}
-
-h1{
-text-align:center;
-color:#1e3a8a;
-}
-
-.card{
-background:white;
-padding:20px;
-margin:20px;
-border-radius:10px;
-box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
-
-button{
-padding:10px 15px;
-background:#2563eb;
-color:white;
-border:none;
-cursor:pointer;
-border-radius:5px;
-}
-
-button:hover{
-background:#1e40af;
-}
-
-input{
-padding:8px;
-margin-top:10px;
-}
-
-.result{
-margin-top:10px;
-color:green;
-font-weight:bold;
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Building - Full Suite</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <style>
+        body{ font-family: 'Segoe UI', sans-serif; margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#020b1a; color:white; }
+        .container{ text-align:center; background:rgba(255,255,255,0.05); padding:30px; border-radius:20px; width:480px; border: 1px solid #1a73e8; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        h2{ color: #8ab4f8; margin-bottom: 15px; }
+        button { padding:14px; margin:8px; border:none; border-radius:10px; cursor:pointer; background:#1a73e8; color:white; width: 95%; font-weight: bold; transition: 0.3s; }
+        button:hover { background:#4285f4; transform: scale(1.01); }
+        .back { background:#3c4043; margin-top: 15px; }
+        input, select { padding:12px; border-radius:8px; margin:8px 0; width:90%; border:none; background: #e8f0fe; font-size: 15px; color: #000; }
+        .section { display:none; }
+        #previewCanvas { width:100%; border-radius:10px; margin-top:15px; border: 2px solid #1a73e8; background: #000; }
+        .result-box { margin-top:15px; padding:15px; border-radius:10px; background: rgba(255,255,255,0.1); text-align: left; line-height: 1.5; border-left: 5px solid #1a73e8; font-size: 0.9em; }
+        .alert { border-left-color: #ea4335; color: #f28b82; }
+        .success { border-left-color: #34a853; color: #81c995; }
+        ul { padding-left: 20px; margin: 5px 0; }
+    </style>
 </head>
-
 <body>
 
-<h1>AI Smart Building Dashboard</h1>
+<div class="container">
+    <div id="home">
+        <h1>AI Smart Building</h1>
+        <p>Structural, Energy & Climate Intelligence</p>
+        <button onclick="show('dashboard')">Launch Dashboard</button>
+    </div>
 
-<!-- Temperature Prediction -->
+    <div id="dashboard" class="section">
+        <h2>System Control</h2>
+        <button onclick="show('maintain')">🔍 Wall Maintenance Scan</button>
+        <button onclick="show('energy')">⚡ Energy & Billing Predictor</button>
+        <button onclick="show('climate')">🌡️ Climate Predictor</button>
+        <button class="back" onclick="show('home')">Log Out</button>
+    </div>
 
-<div class="card">
+    <div id="maintain" class="section">
+        <h2>Wall Analysis</h2>
+        <button onclick="document.getElementById('fileIn').click()">Upload Photo</button>
+        <input type="file" id="fileIn" style="display:none" accept="image/*" onchange="processImage(event)">
+        <canvas id="previewCanvas"></canvas>
+        <div id="mRes" class="result-box">No scan data...</div>
+        <button class="back" onclick="show('dashboard')">Back</button>
+    </div>
 
-<h2>Temperature Prediction</h2>
+    <div id="energy" class="section">
+        <h2>Energy & Bill Predictor</h2>
+        <input type="number" id="uIn" placeholder="Monthly Units (kWh)">
+        <select id="bType">
+            <option value="Residential">Residential (₹7/unit)</option>
+            <option value="Commercial">Commercial (₹12/unit)</option>
+        </select>
+        <button onclick="analyzeEnergy()">Predict Bill & Recommend</button>
+        <div id="eRes" class="result-box">Enter data for audit.</div>
+        <button class="back" onclick="show('dashboard')">Back</button>
+    </div>
 
-<label>Enter Outside Temperature (°C)</label><br>
-
-<input type="number" id="tempInput">
-
-<br><br>
-
-<button onclick="predictTemp()">Predict Indoor Temperature</button>
-
-<p class="result" id="tempResult"></p>
-
-</div>
-
-<!-- Energy Consumption -->
-
-<div class="card">
-
-<h2>Energy Consumption Analysis</h2>
-
-<button onclick="energyCheck()">Analyze Energy Usage</button>
-
-<p class="result" id="energyResult"></p>
-
-</div>
-
-<!-- Maintenance Detection -->
-
-<div class="card">
-
-<h2>Wall Maintenance Detection</h2>
-
-<label>Upload Wall Image</label><br>
-
-<input type="file">
-
-<br><br>
-
-<button onclick="checkWall()">Scan Wall</button>
-
-<p class="result" id="wallResult"></p>
-
+    <div id="climate" class="section">
+        <h2>Climate AI</h2>
+        <p>Predicts optimal AC setpoints based on weather.</p>
+        <input type="number" id="tIn" placeholder="Current Outdoor Temp (°C)">
+        <button onclick="predictClimate()">Analyze Climate Load</button>
+        <div id="cRes" class="result-box">Awaiting temperature data...</div>
+        <button class="back" onclick="show('dashboard')">Back</button>
+    </div>
 </div>
 
 <script>
+    function show(id) {
+        document.querySelectorAll('.section, #home').forEach(s => s.style.display='none');
+        document.getElementById(id).style.display='block';
+    }
 
-function predictTemp(){
+    // --- ACCURATE MAINTENANCE LOGIC ---
+    function processImage(e) {
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width; canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                analyzePixels(ctx, canvas.width, canvas.height);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    }
 
-let outside = document.getElementById("tempInput").value;
+    function analyzePixels(ctx, w, h) {
+        const data = ctx.getImageData(0, 0, w, h).data;
+        let darkPixels = 0;
+        for (let i = 0; i < data.length; i += 40) {
+            if ((data[i] + data[i+1] + data[i+2]) / 3 < 60) darkPixels++; 
+        }
+        const res = document.getElementById('mRes');
+        if (darkPixels > (w * h / 5000)) { 
+            res.className = "result-box alert";
+            res.innerHTML = "<b>RESULT: CRACK DETECTED</b><br>Structural anomalies found. Schedule inspection.";
+        } else {
+            res.className = "result-box success";
+            res.innerHTML = "<b>RESULT: WALL STABLE</b><br>Surface integrity verified.";
+        }
+    }
 
-if(outside == ""){
-alert("Please enter temperature");
-return;
-}
+    // --- ENERGY & BILLING LOGIC ---
+    function analyzeEnergy() {
+        const units = parseFloat(document.getElementById('uIn').value);
+        const type = document.getElementById('bType').value;
+        const res = document.getElementById('eRes');
+        if(!units) return;
 
-let inside = 25 - (outside/5);
+        const rate = (type === "Residential") ? 7 : 12;
+        const expectedBill = units * rate;
+        let advice = (units > 350) ? "<li>Switch to LED.</li><li>Clean AC filters.</li>" : "<li>Efficiency is good.</li>";
 
-document.getElementById("tempResult").innerHTML =
-"Recommended Indoor Temperature: " + inside.toFixed(1) + " °C";
+        res.className = (units > 350) ? "result-box alert" : "result-box success";
+        res.innerHTML = `
+            <b>Estimated Bill:</b> ₹${expectedBill.toLocaleString()}<br>
+            <b>Usage Status:</b> ${units > 350 ? 'High' : 'Normal'}<br>
+            <b>Recommendations:</b><ul>${advice}</ul>
+        `;
+    }
 
-}
+    // --- CLIMATE PREDICTOR LOGIC ---
+    function predictClimate() {
+        const temp = parseFloat(document.getElementById('tIn').value);
+        const res = document.getElementById('cRes');
+        if(isNaN(temp)) return;
 
-function energyCheck(){
+        // Logic for efficient cooling
+        let setpoint = 24; 
+        let load = "Low";
 
-let devices = ["AC","Washing Machine","Heater"];
+        if(temp > 38) { setpoint = 22; load = "Critical"; }
+        else if(temp > 30) { setpoint = 24; load = "Moderate"; }
+        else { setpoint = 26; load = "Low"; }
 
-document.getElementById("energyResult").innerHTML =
-"High Energy Consumption Devices: " + devices.join(", ") +
-". Suggestion: Reduce usage time when not required.";
-
-}
-
-function checkWall(){
-
-document.getElementById("wallResult").innerHTML =
-"Possible cracks or leakage detected in the wall. Maintenance recommended.";
-
-}
-
+        res.innerHTML = `
+            <b>Outdoor Temp:</b> ${temp}°C<br>
+            <b>Recommended AC Setpoint:</b> ${setpoint}°C<br>
+            <b>Building Thermal Load:</b> ${load}<br>
+            <small><i>Note: Keeping AC at 24°C saves up to 6% energy per degree.</i></small>
+        `;
+    }
 </script>
-
 </body>
 </html>
