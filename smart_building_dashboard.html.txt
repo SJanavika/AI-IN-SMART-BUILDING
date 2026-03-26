@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>AI Smart Building Dashboard</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6f9;
+padding:40px;
+}
+
+h1{
+text-align:center;
+color:#1e3a8a;
+}
+
+.card{
+background:white;
+padding:20px;
+margin:20px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+button{
+padding:10px 15px;
+background:#2563eb;
+color:white;
+border:none;
+cursor:pointer;
+border-radius:5px;
+}
+
+button:hover{
+background:#1e40af;
+}
+
+input{
+padding:8px;
+margin-top:10px;
+}
+
+.result{
+margin-top:10px;
+color:green;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>AI Smart Building Dashboard</h1>
+
+<!-- Temperature Prediction -->
+
+<div class="card">
+
+<h2>Temperature Prediction</h2>
+
+<label>Enter Outside Temperature (°C)</label><br>
+
+<input type="number" id="tempInput">
+
+<br><br>
+
+<button onclick="predictTemp()">Predict Indoor Temperature</button>
+
+<p class="result" id="tempResult"></p>
+
+</div>
+
+<!-- Energy Consumption -->
+
+<div class="card">
+
+<h2>Energy Consumption Analysis</h2>
+
+<button onclick="energyCheck()">Analyze Energy Usage</button>
+
+<p class="result" id="energyResult"></p>
+
+</div>
+
+<!-- Maintenance Detection -->
+
+<div class="card">
+
+<h2>Wall Maintenance Detection</h2>
+
+<label>Upload Wall Image</label><br>
+
+<input type="file">
+
+<br><br>
+
+<button onclick="checkWall()">Scan Wall</button>
+
+<p class="result" id="wallResult"></p>
+
+</div>
+
+<script>
+
+function predictTemp(){
+
+let outside = document.getElementById("tempInput").value;
+
+if(outside == ""){
+alert("Please enter temperature");
+return;
+}
+
+let inside = 25 - (outside/5);
+
+document.getElementById("tempResult").innerHTML =
+"Recommended Indoor Temperature: " + inside.toFixed(1) + " °C";
+
+}
+
+function energyCheck(){
+
+let devices = ["AC","Washing Machine","Heater"];
+
+document.getElementById("energyResult").innerHTML =
+"High Energy Consumption Devices: " + devices.join(", ") +
+". Suggestion: Reduce usage time when not required.";
+
+}
+
+function checkWall(){
+
+document.getElementById("wallResult").innerHTML =
+"Possible cracks or leakage detected in the wall. Maintenance recommended.";
+
+}
+
+</script>
+
+</body>
+</html>
